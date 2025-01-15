@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 class BattleshipGame
 {
@@ -23,14 +23,85 @@ class BattleshipGame
         // Rozmieszczenie statków przeciwnika (prosta losowa logika)
         PlaceShips(enemyBoard);
 
-        // Wyświetlenie plansz
-        Console.WriteLine("Twoja plansza:");
-        PrintBoard(playerBoard);
+        // Rozgrywka
+        bool gameOver = false;
+        while (!gameOver)
+        {
+            Console.Clear();
 
-        Console.WriteLine("\nPlansza przeciwnika (ukryta):");
-        PrintBoard(enemyDisplayBoard);
+            Console.WriteLine("Twoja plansza:");
+            PrintBoard(playerBoard);
 
-        // Możesz tutaj dodać logikę rozgrywki
+            Console.WriteLine("\nPlansza przeciwnika (ukryta):");
+            PrintBoard(enemyDisplayBoard);
+
+            Console.WriteLine("\nPodaj współrzędne strzału (np. A5):");
+            string input = Console.ReadLine();
+
+            if (!string.IsNullOrEmpty(input) && input.Length >= 2)
+            {
+                char rowChar = input[0];
+                string colString = input.Substring(1);
+
+                int row = rowChar - 'A';
+                if (int.TryParse(colString, out int col) && row >= 0 && row < boardSize && col >= 1 && col <= boardSize)
+                {
+                    col -= 1; // Konwersja do indeksu tablicy
+
+                    if (enemyDisplayBoard[row, col] == 'X' || enemyDisplayBoard[row, col] == '*')
+                    {
+                        Console.WriteLine("Już strzelałeś w to pole. Spróbuj ponownie.");
+                        Console.ReadKey();
+                        continue;
+                    }
+
+                    bool hit = TakeShot(enemyBoard, enemyDisplayBoard, row, col);
+
+                    if (hit)
+                    {
+                        Console.WriteLine("Trafiony!");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Pudło.");
+                    }
+
+                    Console.ReadKey();
+
+                    // Sprawdzenie, czy wszystkie statki przeciwnika zostały zatopione
+                    gameOver = IsFleetDestroyed(enemyBoard);
+                    if (gameOver)
+                    {
+                        Console.WriteLine("Gratulacje! Zatopiłeś wszystkie statki przeciwnika!");
+                        break;
+                    }
+
+                    // Ruch przeciwnika
+                    Console.WriteLine("\nPrzeciwnik strzela...");
+                    EnemyTurn(playerBoard);
+
+                    Console.ReadKey();
+
+                    // Sprawdzenie, czy wszystkie statki gracza zostały zatopione
+                    gameOver = IsFleetDestroyed(playerBoard);
+                    if (gameOver)
+                    {
+                        Console.WriteLine("Przeciwnik zatopił wszystkie twoje statki! Przegrałeś.");
+                        break;
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Nieprawidłowe współrzędne. Spróbuj ponownie.");
+                    Console.ReadKey();
+                }
+            }
+            else
+            {
+                Console.WriteLine("Nieprawidłowe dane wejściowe. Spróbuj ponownie.");
+                Console.ReadKey();
+            }
+        }
     }
 
     static void InitializeBoard(char[,] board)
@@ -46,10 +117,16 @@ class BattleshipGame
 
     static void PrintBoard(char[,] board)
     {
-        Console.WriteLine(" 1 2 3 4 5 6 7 8 9 10");
-        for (int i = 0; i < board.GetLength(0); i++)
+        Console.Write("  ");
+        for (int i = 1; i <= board.GetLength(1); i++)
         {
             Console.Write(i + " ");
+        }
+        Console.WriteLine();
+
+        for (int i = 0; i < board.GetLength(0); i++)
+        {
+            Console.Write((char)('A' + i) + " ");
             for (int j = 0; j < board.GetLength(1); j++)
             {
                 Console.Write(board[i, j] + " ");
@@ -158,5 +235,45 @@ class BattleshipGame
             return false;
         }
         return false;
+    }
+
+    static bool IsFleetDestroyed(char[,] board)
+    {
+        for (int i = 0; i < board.GetLength(0); i++)
+        {
+            for (int j = 0; j < board.GetLength(1); j++)
+            {
+                if (board[i, j] == 'S') return false;
+            }
+        }
+        return true;
+    }
+
+    static void EnemyTurn(char[,] playerBoard)
+    {
+        // Miejsce na logikę bota (przeciwnika)
+        // Przykład prostego losowego strzału:
+        Random random = new Random();
+        int row, col;
+        bool validShot = false;
+
+        while (!validShot)
+        {
+            row = random.Next(0, playerBoard.GetLength(0));
+            col = random.Next(0, playerBoard.GetLength(1));
+
+            if (playerBoard[row, col] == 'S')
+            {
+                playerBoard[row, col] = 'X';
+                Console.WriteLine($"Przeciwnik trafił w twoje pole: {(char)('A' + row)}{col + 1}");
+                validShot = true;
+            }
+            else if (playerBoard[row, col] == '~')
+            {
+                playerBoard[row, col] = '*';
+                Console.WriteLine($"Przeciwnik spudłował: {(char)('A' + row)}{col + 1}");
+                validShot = true;
+            }
+        }
     }
 }
